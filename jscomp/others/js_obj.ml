@@ -65,6 +65,8 @@ external empty : unit -> < .. >  = "" [@@bs.obj]
 *)
 external assign : < .. > -> < .. >  -> < .. >  = "Object.assign" [@@bs.val]
 
+external assign3 : < .. > Js.t -> < .. > Js.t -> < .. > Js.t -> < .. > Js.t = "Object.assign" [@@bs.val]
+
 (* TODO:
 
 Should we map this API as directly as possible, provide some abstractions, or deliberately nerf it?

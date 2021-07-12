@@ -91,25 +91,27 @@ function main(argv, rescript_exe, bsc_exe) {
         process.exit(2);
       }
       files = output.stdout.split("\n").map((x) => x.trim());
+      var hasError = false;
       for (let arg of files) {
         if (isSupportedFile(arg)) {
           // console.log(`processing ${arg}`);
           child_process.execFile(
             bsc_exe,
             ["-o", arg, "-format", arg],
-            (error, stdout, stderr) => {
-              if (error === null) {
-                // todo
-              } else {
-                // todo error handling
-                console.log(stderr);
+            (error, _stdout, stderr) => {
+              if (error !== null) {
+                console.error(stderr);
+                hasError = true;
               }
             }
           );
         }
       }
+      if (hasError) {
+        process.exit(2);
+      }
     } else if (use_stdin) {
-      if (isSupportedStd(use_stdin)) {
+      if (formattedStdExtensions.includes(use_stdin)) {
         var crypto = require("crypto");
         var os = require("os");
         var filename = path.join(
@@ -118,23 +120,27 @@ function main(argv, rescript_exe, bsc_exe) {
         );
         (async function () {
           var content = await readStdin();
-          fs.writeFileSync(filename, content, "utf8");
+          var fd = fs.openSync(filename, 'wx', 0o600);
+          process.addListener('exit', () => fs.unlinkSync(filename));
+          fs.writeFileSync(fd, content, "utf8");
+          fs.closeSync(fd);
+
           child_process.execFile(
             bsc_exe,
             ["-format", filename],
             (error, stdout, stderr) => {
               if (error === null) {
-                console.log(stdout.trimEnd());
+                process.stdout.write(stdout);
               } else {
-                console.log(stderr);
+                console.error(stderr);
                 process.exit(2);
               }
             }
           );
         })();
       } else {
-        console.error(`Unsupported exetnsion ${use_stdin}`);
-        console.error(`Supported extensions: ${formattedStdExtensions} `);
+        console.error(`Unsupported extension ${use_stdin}`);
+        console.error(`Supported extensions: ${formattedStdExtensions}`);
         process.exit(2);
       }
     } else {
@@ -152,19 +158,24 @@ function main(argv, rescript_exe, bsc_exe) {
           process.exit(2);
         }
       }
+      var hasError = false;
       files.forEach((file) => {
         var write = isSupportedFile(file);
         var flags = write ? ["-o", file, "-format", file] : ["-format", file];
         child_process.execFile(bsc_exe, flags, (error, stdout, stderr) => {
           if (error === null) {
             if (!write) {
-              console.log(stdout);
+              process.stdout.write(stdout);
             }
           } else {
-            console.log(stderr);
+            console.error(stderr);
+            hasError = true;
           }
         });
       });
+      if (hasError) {
+        process.exit(2);
+      }
     }
   } catch (e) {
     if (e instanceof arg.ArgError) {

@@ -4,11 +4,14 @@
     "mocha": "^7.2.0",
     "nyc": "^15.0.0"
   },
+  "engines": {
+    "node": ">=10"
+  },
   "bin": {
     "bsc": "bsc",
     "bsrefmt": "bsrefmt",
     "bstracing": "lib/bstracing",
-    "rescript" : "rescript"
+    "rescript": "rescript"
   },
   "scripts": {
     "test": "node scripts/ciTest.js  -all",
